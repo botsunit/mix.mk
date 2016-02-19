@@ -10,6 +10,7 @@ The command `make mix.exs` will generate the Mix file
 PROJECT = test
 
 DEP_PLUGINS = mix.mk
+BUILD_DEPS = mix.mk
 ELIXIR_VERSION = ~> 1.2
 
 dep_mix.mk = git https://github.com/botsunit/mix.mk.git master
