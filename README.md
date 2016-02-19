@@ -4,6 +4,51 @@ A plugins for [erlang.mk](http://erlang.mk) to generate a compatible [mix.exs](h
 
 The command `make mix.exs` will generate the Mix file
 
+## Example
+
+```makefile
+PROJECT = test
+
+DEP_PLUGINS = mix.mk
+ELIXIR_VERSION = ~> 1.2
+
+dep_elixir.mk = git https://github.com/botsunit/mix.mk.git master
+
+DEPS = lager erlydtl
+dep_lager = git https://github.com/basho/lager.git master
+dep_erlydtl = git https://github.com/erlydtl/erlydtl.git master
+
+include erlang.mk
+```
+
+`make mix.exs` will generate :
+
+```elixir
+defmodule Test.Mixfile do
+  use Mix.Project
+
+  def project do
+    [app: :test,
+     version: "0.0.1",
+     elixir: "~> 1.2",
+     build_embedded: Mix.env == :prod,
+     start_permanent: Mix.env == :prod,
+     deps: deps]
+  end
+
+  def application do
+    [applications: [:lager], mod: {:test_app, []}]
+  end
+
+  defp deps do
+    [ 
+      {:lager, ~r/.*/, git: "https://github.com/basho/lager.git", branch: "master"},
+      {:erlydtl, ~r/.*/, git: "https://github.com/erlydtl/erlydtl.git", branch: "master"},  
+    ]
+  end
+end
+```
+
 ## Licence
 
 Copyright (c) 2016, Bots Unit<br />
