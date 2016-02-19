@@ -12,7 +12,7 @@ PROJECT = test
 DEP_PLUGINS = mix.mk
 ELIXIR_VERSION = ~> 1.2
 
-dep_elixir.mk = git https://github.com/botsunit/mix.mk.git master
+dep_mix.mk = git https://github.com/botsunit/mix.mk.git master
 
 DEPS = lager erlydtl
 dep_lager = git https://github.com/basho/lager.git master
