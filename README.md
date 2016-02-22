@@ -2,7 +2,10 @@
 
 A plugins for [erlang.mk](http://erlang.mk) to generate a compatible [mix.exs](http://elixir-lang.org/docs/stable/mix/Mix.html) file. 
 
-The command `make mix.exs` will generate the Mix file
+This plugin has two commands :
+
+* `make mix.exs` will generate the Mix file.
+* `make mix.bind` will generate Elixir bindings.
 
 ## Example
 
@@ -49,6 +52,28 @@ defmodule Test.Mixfile do
   end
 end
 ```
+
+`make mix.bind` will generate an Elixir module in `lib` for each Erlang module. For example :
+
+* From `src/example.erl`, `mix.mk` will generate a module `lib/Example.ex`
+* From `src/my_example.erl`, `mix.mk` will generate a module `lib/My.Example.ex`
+* From `src/other/simple_example.erl`, `mix.mk` will generate a module `lib/Other.Simple.Example.ex`
+
+You specify the modules for which you want a binding, by using the `ELIXIR_BINDINGS` variable :
+
+```makefile
+ELIXIR_BINDINGS = example simple_example
+```
+
+In this case, only `lib/Example.ex` and `lib/Other.Simple.Example.ex` will be generated.
+
+You can also add a prefix by using `ELIXIR_BINDINGS_PREFIX`
+
+```makefile
+ELIXIR_BINDINGS_PREFIX = hello
+```
+
+So `mix.mk` will generate `lib/Hello.Example.ex` and `lib/Hello.Other.Simple.Example.ex`
 
 ## Licence
 
