@@ -173,11 +173,16 @@ $(ELIXIR_BINDINGS_DEST):
 
 mix.bind: app $(ALL_ELIXIR_MODULES_SRC)
 
+## All
+
+mix.all: mix.exs mix.bind
+
 ## Help
 
 help::
 	$(verbose) printf "%s\n" "" \
 		"Mix.exs targets:" \
 		"  mix.exs              Create a mix.exs file" \
-		"  mix.bind             Create bindings for Elixir"
+		"  mix.bind             Create bindings for Elixir" \
+		"  mix.all              Call mix.exs and mix.bind"
 
