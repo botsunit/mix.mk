@@ -101,7 +101,7 @@ endef
 $(eval _compat_mix_exs = $$(compat_mix_exs))
 $(eval export _compat_mix_exs)
 
-mix.exs:
+mix.exs: app
 	$(gen_verbose) echo "$${_compat_mix_exs}" > mix.exs
 
 ## Bindings
@@ -169,7 +169,7 @@ $(ELIXIR_BINDINGS_DEST):
 
 .PHONY: $(ALL_ELIXIR_MODULES_SRC)
 
-mix.bind: $(ALL_ELIXIR_MODULES_SRC)
+mix.bind: app $(ALL_ELIXIR_MODULES_SRC)
 
 ## Help
 
