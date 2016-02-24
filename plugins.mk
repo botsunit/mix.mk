@@ -1,17 +1,17 @@
 .PHONY: mix.exs
 
 ELIXIR_VERSION ?= ~> 1.2
-ELIXIR_BINDINGS ?= 
+ELIXIR_BINDINGS ?=
 ELIXIR_BINDINGS_SRC ?= src/
 ELIXIR_BINDINGS_DEST ?= lib
-ELIXIR_BINDINGS_PREFIX ?= 
+ELIXIR_BINDINGS_PREFIX ?=
 
 MIX_PROJECT = $(shell echo "${PROJECT}" | sed -r 's/(.)(.*)/\U\1\E\2/' | sed -r 's/_(.)/\U\1\E/g')
 MIX_PROJECT_VERSION = ${PROJECT_VERSION}
 MIX_DEPS = []
 MIX_APPLICATION = []
 
-mix_verbose_0 = @echo " GEN   " 
+mix_verbose_0 = @echo " GEN   "
 mix_verbose = $(mix_verbose_$(V))
 
 ## mix.exs
@@ -27,7 +27,7 @@ define get_app_version.erl
 		  case lists:keyfind(vsn, 1, Terms) of
 			  {vsn, Data} ->
 				  io:format("~s", [Data]);
-				false -> 
+				false ->
 				  io:format("0.0.1")
 		  end;
 	  {error, _} -> io:format("0.0.1")
@@ -46,7 +46,7 @@ define get_app_applications.erl
 					                     (E, Acc) -> [":" ++ atom_to_list(E)|Acc]
 					       end, [], Data),
 					io:format("~s", [string:join(lists:reverse(Deps), ",")]);
-				false -> 
+				false ->
 				  io:format("")
 		  end;
 	  {error, _} -> io:format("")
@@ -60,7 +60,7 @@ define get_app_mod.erl
 		  case lists:keyfind(mod, 1, Terms) of
 			  {mod, {Mod, Args}} ->
 				io:format(", mod: {:~p, ~p}", [Mod, Args]);
-				false -> 
+				false ->
 				  io:format("")
 		  end;
 	  {error, _} -> io:format("")
@@ -108,10 +108,13 @@ mix.exs: app
 
 rwildcard=$(wildcard $(addsuffix $2, $1)) $(foreach d,$(wildcard $(addsuffix *, $1)),$(call rwildcard,$d/,$2))
 
+ELIXIR_BINDINGS_SRC_F = $(ELIXIR_BINDINGS_SRC:/=)/
+ELIXIR_BINDINGS_DEST_F ?= $(ELIXIR_BINDINGS_DEST:/=)
+
 ifeq ($(ELIXIR_BINDINGS),)
-ERLANG_BINDINGS_SRC = $(call rwildcard,$(ELIXIR_BINDINGS_SRC),*.erl)
+ERLANG_BINDINGS_SRC = $(call rwildcard,$(ELIXIR_BINDINGS_SRC_F),*.erl)
 else
-ERLANG_BINDINGS_SRC = $(foreach e,$(ELIXIR_BINDINGS),$(call rwildcard,$(ELIXIR_BINDINGS_SRC),$(e).erl))
+ERLANG_BINDINGS_SRC = $(foreach e,$(ELIXIR_BINDINGS),$(call rwildcard,$(ELIXIR_BINDINGS_SRC_F),$(e).erl))
 endif
 ifneq ($(ELIXIR_BINDINGS_PREFIX),)
 ELIXIR_BINDINGS_PREFIX_F = $(shell echo "$(ELIXIR_BINDINGS_PREFIX)" | \
@@ -119,55 +122,60 @@ ELIXIR_BINDINGS_PREFIX_F = $(shell echo "$(ELIXIR_BINDINGS_PREFIX)" | \
 												 sed -r 's/_(.)/\U\1\E/g').
 endif
 
-define write_ex.erl	
-	case code:load_abs("ebin/$(1)") of
-	  {error, _} -> halt(1);
-		{module, M} -> 
-		  case erlang:apply(M, module_info, [exports]) of
-			  MI when is_list(MI) ->
-				  {ok, IO} = file:open("$(4)", [write]),
-					io:format(IO, "# File: $(4)\n", []),
-		      io:format(IO, "# This file was generated from $(2)\n", []),
-					io:format(IO, "# Using mix.mk (https://github.com/botsunit/mix.mk)\n", []),
-					io:format(IO, "# MODIFY IT AT YOUR OWN RISK AND ONLY IF YOU KNOW WHAT YOU ARE DOING!\n", []),
-          io:format(IO, "defmodule $(3) do\n", []),
-					lists:foreach(fun
-					                ({module_info, _}) -> ok;
-					                ({N, A}) ->
-					                  Args = string:join(
-													           lists:map(fun(E) -> 
-													  				             "arg" ++ integer_to_list(E) 
-													  									 end, lists:seq(1,A)), ", "),
-													  io:format(IO, "  def unquote(:~p)(~s) do\n", [atom_to_list(N), Args]),
-														io:format(IO, "    :erlang.apply(:~p, :~p, [~s])\n", [atom_to_list(M), atom_to_list(N), Args]),
-														io:format(IO, "  end\n", [])
-					              end, MI),
-          io:format(IO, "end\n", []),
-					ok = file:close(IO);
-			  _-> halt(1)
-		  end
-	end,
-	halt(0).
+define write_ex.erl
+  case filelib:ensure_dir(filename:join(["$(ELIXIR_BINDINGS_DEST_F)", "."])) of
+    ok ->
+ 	    case code:load_abs("ebin/$(1)") of
+ 	      {error, _} -> halt(1);
+ 	    	{module, M} ->
+ 	    	  case erlang:apply(M, module_info, [exports]) of
+ 	    		  MI when is_list(MI) ->
+ 	    			  case file:open("$(4)", [write]) of
+                {ok, IO} ->
+ 	    				    io:format(IO, "# File: $(4)\n", []),
+ 	    	          io:format(IO, "# This file was generated from $(2)\n", []),
+ 	    				    io:format(IO, "# Using mix.mk (https://github.com/botsunit/mix.mk)\n", []),
+ 	    				    io:format(IO, "# MODIFY IT AT YOUR OWN RISK AND ONLY IF YOU KNOW WHAT YOU ARE DOING!\n", []),
+                  io:format(IO, "defmodule $(3) do\n", []),
+ 	    				    lists:foreach(fun
+ 	    				                    ({module_info, _}) -> ok;
+ 	    				                    ({N, A}) ->
+ 	    				                      Args = string:join(
+ 	    				    								           lists:map(fun(E) ->
+ 	    				    								  				             "arg" ++ integer_to_list(E)
+ 	    				    								  									 end, lists:seq(1,A)), ", "),
+ 	    				    								  io:format(IO, "  def unquote(:~p)(~s) do\n", [atom_to_list(N), Args]),
+ 	    				    									io:format(IO, "    :erlang.apply(:~p, :~p, [~s])\n", [atom_to_list(M), atom_to_list(N), Args]),
+ 	    				    									io:format(IO, "  end\n", [])
+ 	    				                  end, MI),
+                  io:format(IO, "end\n", []),
+                  ok = file:close(IO);
+                _ ->
+                  halt(1)
+              end;
+ 	    		  _-> halt(1)
+ 	    	  end
+      end;
+    _ -> help(1)
+  end,
+  halt(0).
 endef
 
 define elixir_binding_target
 $(eval n := $(notdir $(basename $1)))
 $(eval s := $(basename $1))
-$(eval m := $(subst $(ELIXIR_BINDINGS_SRC),,$s))
-$(eval d := $(ELIXIR_BINDINGS_DEST)/$(ELIXIR_BINDINGS_PREFIX_F)$(shell echo "$m" | sed -r 's/(.)(.*)/\U\1\E\2/' | sed -r 's/\/(.)/.\U\1\E/g' | sed -r 's/_(.)/.\U\1\E/g').ex)
+$(eval m := $(subst $(ELIXIR_BINDINGS_SRC_F),,$s))
+$(eval d := $(ELIXIR_BINDINGS_DEST_F)/$(ELIXIR_BINDINGS_PREFIX_F)$(shell echo "$m" | sed -r 's/(.)(.*)/\U\1\E\2/' | sed -r 's/\/(.)/.\U\1\E/g' | sed -r 's/_(.)/.\U\1\E/g').ex)
 $(eval e := $(notdir $(basename $d)))
-$d: $1 $(ELIXIR_BINDINGS_DEST)
+$d: $1
 	$(mix_verbose) $d
 	$(shell $(call erlang,$(call write_ex.erl,$n,$1,$e,$d)))
 endef
 $(foreach src,$(ERLANG_BINDINGS_SRC),$(eval $(call elixir_binding_target,$(src))))
 
 ALL_ELIXIR_MODULES_SRC0 = $(foreach mod,$(ERLANG_BINDINGS_SRC),$(basename $(mod)))
-ALL_ELIXIR_MODULES_SRC1 = $(foreach mod,$(ALL_ELIXIR_MODULES_SRC0),$(subst $(ELIXIR_BINDINGS_SRC),,$(mod)))
-ALL_ELIXIR_MODULES_SRC = $(foreach mod,$(ALL_ELIXIR_MODULES_SRC1),$(ELIXIR_BINDINGS_DEST)/$(ELIXIR_BINDINGS_PREFIX_F)$(shell echo "$(mod)" | sed -r 's/(.)(.*)/\U\1\E\2/' | sed -r 's/\/(.)/.\U\1\E/g' | sed -r 's/_(.)/.\U\1\E/g').ex)
-
-$(ELIXIR_BINDINGS_DEST):
-	@mkdir -p $(ELIXIR_BINDINGS_DEST)
+ALL_ELIXIR_MODULES_SRC1 = $(foreach mod,$(ALL_ELIXIR_MODULES_SRC0),$(subst $(ELIXIR_BINDINGS_SRC_F),,$(mod)))
+ALL_ELIXIR_MODULES_SRC = $(foreach mod,$(ALL_ELIXIR_MODULES_SRC1),$(ELIXIR_BINDINGS_DEST_F)/$(ELIXIR_BINDINGS_PREFIX_F)$(shell echo "$(mod)" | sed -r 's/(.)(.*)/\U\1\E\2/' | sed -r 's/\/(.)/.\U\1\E/g' | sed -r 's/_(.)/.\U\1\E/g').ex)
 
 .PHONY: $(ALL_ELIXIR_MODULES_SRC)
 
