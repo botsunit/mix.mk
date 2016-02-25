@@ -16,6 +16,8 @@ mix_verbose = $(mix_verbose_$(V))
 
 ## mix.exs
 
+MIX_COMPILE_EXTRA_erlydtl = , compile: "make"
+
 APP_SRC = $(wildcard src/*.app.src)
 ifeq ($(APP_SRC),)
 APP_SRC = $(wildcard ebin/*.app)
@@ -92,7 +94,7 @@ defmodule ${MIX_PROJECT}.Mixfile do
 
   defp deps do
     [$(foreach d,$(DEPS),\
-\n      {:$(call dep_name,$d), ~r/.*/, git: "$(call dep_repo,$d)", branch: "$(call dep_commit,$d)"},)
+\n      {:$(call dep_name,$d), ~r/.*/, git: "$(call dep_repo,$d)", branch: "$(call dep_commit,$d)"$(MIX_COMPILE_EXTRA_$(call dep_name,$d))},)
     ]
   end
 end
