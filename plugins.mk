@@ -6,7 +6,14 @@ ELIXIR_BINDINGS_SRC ?= src/
 ELIXIR_BINDINGS_DEST ?= lib
 ELIXIR_BINDINGS_PREFIX ?=
 
-MIX_PROJECT = $(shell echo "${PROJECT}" | sed -r 's/(.)(.*)/\U\1\E\2/' | sed -r 's/_(.)/\U\1\E/g')
+define modularize.erl
+  N0 = string:join(lists:map(fun([H|R]) -> [string:to_upper(H)|string:to_lower(R)] end, string:tokens("$1", "_")), ""),
+  N1 = string:join(lists:map(fun([H|R]) -> [string:to_upper(H)|string:to_lower(R)] end, string:tokens(N0, "/")), "."),
+  io:format("~s", [N1]),
+	halt(0).
+endef
+
+MIX_PROJECT = $(shell $(call erlang,$(call modularize.erl,${PROJECT})))
 MIX_PROJECT_VERSION = ${PROJECT_VERSION}
 MIX_DEPS = []
 MIX_APPLICATION = []
@@ -119,9 +126,7 @@ else
 ERLANG_BINDINGS_SRC = $(foreach e,$(ELIXIR_BINDINGS),$(call rwildcard,$(ELIXIR_BINDINGS_SRC_F),$(e).erl))
 endif
 ifneq ($(ELIXIR_BINDINGS_PREFIX),)
-ELIXIR_BINDINGS_PREFIX_F = $(shell echo "$(ELIXIR_BINDINGS_PREFIX)" | \
-												 sed -r 's/(.)(.*)/\U\1\E\2/' | \
-												 sed -r 's/_(.)/\U\1\E/g').
+ELIXIR_BINDINGS_PREFIX_F = $(shell $(call erlang,$(call modularize.erl,${ELIXIR_BINDINGS_PREFIX}))).
 endif
 
 define write_ex.erl
@@ -167,7 +172,7 @@ define elixir_binding_target
 $(eval n := $(notdir $(basename $1)))
 $(eval s := $(basename $1))
 $(eval m := $(subst $(ELIXIR_BINDINGS_SRC_F),,$s))
-$(eval d := $(ELIXIR_BINDINGS_DEST_F)/$(ELIXIR_BINDINGS_PREFIX_F)$(shell echo "$m" | sed -r 's/(.)(.*)/\U\1\E\2/' | sed -r 's/\/(.)/.\U\1\E/g' | sed -r 's/_(.)/.\U\1\E/g').ex)
+$(eval d := $(ELIXIR_BINDINGS_DEST_F)/$(ELIXIR_BINDINGS_PREFIX_F)$(shell $(call erlang,$(call modularize.erl,$m))).ex)
 $(eval e := $(notdir $(basename $d)))
 $d: $1
 	$(mix_verbose) $d
@@ -177,7 +182,8 @@ $(foreach src,$(ERLANG_BINDINGS_SRC),$(eval $(call elixir_binding_target,$(src))
 
 ALL_ELIXIR_MODULES_SRC0 = $(foreach mod,$(ERLANG_BINDINGS_SRC),$(basename $(mod)))
 ALL_ELIXIR_MODULES_SRC1 = $(foreach mod,$(ALL_ELIXIR_MODULES_SRC0),$(subst $(ELIXIR_BINDINGS_SRC_F),,$(mod)))
-ALL_ELIXIR_MODULES_SRC = $(foreach mod,$(ALL_ELIXIR_MODULES_SRC1),$(ELIXIR_BINDINGS_DEST_F)/$(ELIXIR_BINDINGS_PREFIX_F)$(shell echo "$(mod)" | sed -r 's/(.)(.*)/\U\1\E\2/' | sed -r 's/\/(.)/.\U\1\E/g' | sed -r 's/_(.)/.\U\1\E/g').ex)
+# ALL_ELIXIR_MODULES_SRC = $(foreach mod,$(ALL_ELIXIR_MODULES_SRC1),$(ELIXIR_BINDINGS_DEST_F)/$(ELIXIR_BINDINGS_PREFIX_F)$(shell echo "$(mod)" | sed -r 's/(.)(.*)/\U\1\E\2/' | sed -r 's/\/(.)/.\U\1\E/g' | sed -r 's/_(.)/.\U\1\E/g').ex)
+ALL_ELIXIR_MODULES_SRC = $(foreach mod,$(ALL_ELIXIR_MODULES_SRC1),$(ELIXIR_BINDINGS_DEST_F)/$(ELIXIR_BINDINGS_PREFIX_F)$(shell $(call erlang,$(call modularize.erl,$(mod)))).ex)
 
 .PHONY: $(ALL_ELIXIR_MODULES_SRC)
 
