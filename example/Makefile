@@ -11,8 +11,6 @@ ELIXIR_BINDINGS_PREFIX = erlang
 include erlang.mk
 include ../plugins.mk
 
-app:: mix.exs mix.bind
-
 dev: deps app
 	@erl -pa ebin include deps/*/ebin deps/*/include
 

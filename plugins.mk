@@ -171,7 +171,7 @@ $(eval d := $(ELIXIR_BINDINGS_DEST_F)/$(ELIXIR_BINDINGS_PREFIX_F)$(shell echo "$
 $(eval e := $(notdir $(basename $d)))
 $d: $1
 	$(mix_verbose) $d
-	$(shell $(call erlang,$(call write_ex.erl,$n,$1,$e,$d)))
+	$(verbose) $(call erlang,$(call write_ex.erl,$n,$1,$e,$d))
 endef
 $(foreach src,$(ERLANG_BINDINGS_SRC),$(eval $(call elixir_binding_target,$(src))))
 
