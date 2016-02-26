@@ -82,6 +82,20 @@ MIX_PROJECT_VERSION = $(shell $(call erlang,$(call get_app_version.erl)))
 MIX_APPLICATION = [applications: [$(shell $(call erlang,$(call get_app_applications.erl)))]$(shell $(call erlang,$(call get_app_mod.erl)))]
 endif
 
+dep_type = $(if $(dep_$(1)),$(word 1,$(dep_$(1))),git)
+
+define add_dep_git
+{:$(call dep_name,$1), ~r/.*/, $(call dep_type,$1): "$(call dep_repo,$1)", branch: "$(call dep_commit,$1)"$(MIX_COMPILE_EXTRA_$(call dep_name,$1))},
+endef
+
+define add_dep_hex
+{:$(call dep_name,$1), "~> $(call dep_repo,$1)"},
+endef
+
+define add_dep_cp
+{:$(call dep_name,$1), path: "$(call dep_repo,$1)"},
+endef
+
 define compat_mix_exs
 defmodule ${MIX_PROJECT}.Mixfile do
   use Mix.Project
@@ -101,7 +115,7 @@ defmodule ${MIX_PROJECT}.Mixfile do
 
   defp deps do
     [$(foreach d,$(DEPS),\
-\n      {:$(call dep_name,$d), ~r/.*/, git: "$(call dep_repo,$d)", branch: "$(call dep_commit,$d)"$(MIX_COMPILE_EXTRA_$(call dep_name,$d))},)
+\n      $(call add_dep_$(call dep_type,$d),$d))
     ]
   end
 end
@@ -182,7 +196,6 @@ $(foreach src,$(ERLANG_BINDINGS_SRC),$(eval $(call elixir_binding_target,$(src))
 
 ALL_ELIXIR_MODULES_SRC0 = $(foreach mod,$(ERLANG_BINDINGS_SRC),$(basename $(mod)))
 ALL_ELIXIR_MODULES_SRC1 = $(foreach mod,$(ALL_ELIXIR_MODULES_SRC0),$(subst $(ELIXIR_BINDINGS_SRC_F),,$(mod)))
-# ALL_ELIXIR_MODULES_SRC = $(foreach mod,$(ALL_ELIXIR_MODULES_SRC1),$(ELIXIR_BINDINGS_DEST_F)/$(ELIXIR_BINDINGS_PREFIX_F)$(shell echo "$(mod)" | sed -r 's/(.)(.*)/\U\1\E\2/' | sed -r 's/\/(.)/.\U\1\E/g' | sed -r 's/_(.)/.\U\1\E/g').ex)
 ALL_ELIXIR_MODULES_SRC = $(foreach mod,$(ALL_ELIXIR_MODULES_SRC1),$(ELIXIR_BINDINGS_DEST_F)/$(ELIXIR_BINDINGS_PREFIX_F)$(shell $(call erlang,$(call modularize.erl,$(mod)))).ex)
 
 .PHONY: $(ALL_ELIXIR_MODULES_SRC)
