@@ -7,7 +7,7 @@ dep_bucs = git https://github.com/botsunit/bucs.git master
 dep_jsx = hex 2.8.0
 
 
-ELIXIR_BINDINGS = example sub
+ELIXIR_BINDINGS = example sub sub_again
 ELIXIR_BINDINGS_PREFIX = erlang
 
 include erlang.mk

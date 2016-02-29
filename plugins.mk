@@ -7,9 +7,8 @@ ELIXIR_BINDINGS_DEST ?= lib
 ELIXIR_BINDINGS_PREFIX ?=
 
 define modularize.erl
-  N0 = string:join(lists:map(fun([H|R]) -> [string:to_upper(H)|string:to_lower(R)] end, string:tokens("$1", "_")), ""),
-  N1 = string:join(lists:map(fun([H|R]) -> [string:to_upper(H)|string:to_lower(R)] end, string:tokens(N0, "/")), "."),
-  io:format("~s", [N1]),
+	N0 = string:join(lists:map(fun([H|R]) -> [string:to_upper(H)|string:to_lower(R)] end, string:tokens("$1", "/_")), "."),
+	io:format("~s", [N0]),
 	halt(0).
 endef
 
@@ -31,48 +30,48 @@ APP_SRC = $(wildcard ebin/*.app)
 endif
 
 define get_app_version.erl
-  case file:consult("$(APP_SRC)") of
+	case file:consult("$(APP_SRC)") of
 		{ok, [{application, _, Terms}]} ->
-		  case lists:keyfind(vsn, 1, Terms) of
-			  {vsn, Data} ->
-				  io:format("~s", [Data]);
+			case lists:keyfind(vsn, 1, Terms) of
+				{vsn, Data} ->
+					io:format("~s", [Data]);
 				false ->
-				  io:format("0.0.1")
-		  end;
-	  {error, _} -> io:format("0.0.1")
+					io:format("0.0.1")
+			end;
+		{error, _} -> io:format("0.0.1")
 	end,
 	halt(0).
 endef
 
 define get_app_applications.erl
-  case file:consult("$(APP_SRC)") of
+	case file:consult("$(APP_SRC)") of
 		{ok, [{application, _, Terms}]} ->
-		  case lists:keyfind(applications, 1, Terms) of
-			  {applications, Data} ->
-				  Deps = lists:foldl(fun
-					                     (kernel, Acc) -> Acc;
-					                     (stdlib, Acc) -> Acc;
-					                     (E, Acc) -> [":" ++ atom_to_list(E)|Acc]
-					       end, [], Data),
+			case lists:keyfind(applications, 1, Terms) of
+				{applications, Data} ->
+					Deps = lists:foldl(fun
+															 (kernel, Acc) -> Acc;
+															 (stdlib, Acc) -> Acc;
+															 (E, Acc) -> [":" ++ atom_to_list(E)|Acc]
+								 end, [], Data),
 					io:format("~s", [string:join(lists:reverse(Deps), ",")]);
 				false ->
-				  io:format("")
-		  end;
-	  {error, _} -> io:format("")
+					io:format("")
+			end;
+		{error, _} -> io:format("")
 	end,
 	halt(0).
 endef
 
 define get_app_mod.erl
-  case file:consult("$(APP_SRC)") of
+	case file:consult("$(APP_SRC)") of
 		{ok, [{application, _, Terms}]} ->
-		  case lists:keyfind(mod, 1, Terms) of
-			  {mod, {Mod, Args}} ->
+			case lists:keyfind(mod, 1, Terms) of
+				{mod, {Mod, Args}} ->
 				io:format(", mod: {:~p, ~p}", [Mod, Args]);
 				false ->
-				  io:format("")
-		  end;
-	  {error, _} -> io:format("")
+					io:format("")
+			end;
+		{error, _} -> io:format("")
 	end,
 	halt(0).
 endef
@@ -99,26 +98,26 @@ endef
 
 define compat_mix_exs
 defmodule ${MIX_PROJECT}.Mixfile do
-  use Mix.Project
+	use Mix.Project
 
-  def project do
-    [app: :${PROJECT},
-     version: "${MIX_PROJECT_VERSION}",
-     elixir: "${ELIXIR_VERSION}",
-     build_embedded: Mix.env == :prod,
-     start_permanent: Mix.env == :prod,
-     deps: deps]
-  end
+	def project do
+		[app: :${PROJECT},
+		 version: "${MIX_PROJECT_VERSION}",
+		 elixir: "${ELIXIR_VERSION}",
+		 build_embedded: Mix.env == :prod,
+		 start_permanent: Mix.env == :prod,
+		 deps: deps]
+	end
 
-  def application do
-    ${MIX_APPLICATION}
-  end
+	def application do
+		${MIX_APPLICATION}
+	end
 
-  defp deps do
-    [$(foreach d,$(DEPS),\
-\n      $(call add_dep_$(call dep_type,$d),$d))
-    ]
-  end
+	defp deps do
+		[$(foreach d,$(DEPS),\
+\n			$(call add_dep_$(call dep_type,$d),$d))
+		]
+	end
 end
 endef
 
@@ -145,42 +144,42 @@ ELIXIR_BINDINGS_PREFIX_F = $(shell $(call erlang,$(call modularize.erl,${ELIXIR_
 endif
 
 define write_ex.erl
-  case filelib:ensure_dir(filename:join(["$(ELIXIR_BINDINGS_DEST_F)", "."])) of
-    ok ->
- 	    case code:load_abs("ebin/$(1)") of
- 	      {error, _} -> halt(1);
- 	    	{module, M} ->
- 	    	  case erlang:apply(M, module_info, [exports]) of
- 	    		  MI when is_list(MI) ->
- 	    			  case file:open("$(4)", [write]) of
-                {ok, IO} ->
- 	    				    io:format(IO, "# File: $(4)\n", []),
- 	    	          io:format(IO, "# This file was generated from $(2)\n", []),
- 	    				    io:format(IO, "# Using mix.mk (https://github.com/botsunit/mix.mk)\n", []),
- 	    				    io:format(IO, "# MODIFY IT AT YOUR OWN RISK AND ONLY IF YOU KNOW WHAT YOU ARE DOING!\n", []),
-                  io:format(IO, "defmodule $(3) do\n", []),
- 	    				    lists:foreach(fun
- 	    				                    ({module_info, _}) -> ok;
- 	    				                    ({N, A}) ->
- 	    				                      Args = string:join(
- 	    				    								           lists:map(fun(E) ->
- 	    				    								  				             "arg" ++ integer_to_list(E)
- 	    				    								  									 end, lists:seq(1,A)), ", "),
- 	    				    								  io:format(IO, "  def unquote(:~p)(~s) do\n", [atom_to_list(N), Args]),
- 	    				    									io:format(IO, "    :erlang.apply(:~p, :~p, [~s])\n", [atom_to_list(M), atom_to_list(N), Args]),
- 	    				    									io:format(IO, "  end\n", [])
- 	    				                  end, MI),
-                  io:format(IO, "end\n", []),
-                  ok = file:close(IO);
-                _ ->
-                  halt(1)
-              end;
- 	    		  _-> halt(1)
- 	    	  end
-      end;
-    _ -> help(1)
-  end,
-  halt(0).
+	case filelib:ensure_dir(filename:join(["$(ELIXIR_BINDINGS_DEST_F)", "."])) of
+		ok ->
+ 			case code:load_abs("ebin/$(1)") of
+ 				{error, _} -> halt(1);
+ 				{module, M} ->
+ 					case erlang:apply(M, module_info, [exports]) of
+ 						MI when is_list(MI) ->
+ 							case file:open("$(4)", [write]) of
+								{ok, IO} ->
+ 									io:format(IO, "# File: $(4)\n", []),
+ 									io:format(IO, "# This file was generated from $(2)\n", []),
+ 									io:format(IO, "# Using mix.mk (https://github.com/botsunit/mix.mk)\n", []),
+ 									io:format(IO, "# MODIFY IT AT YOUR OWN RISK AND ONLY IF YOU KNOW WHAT YOU ARE DOING!\n", []),
+									io:format(IO, "defmodule $(3) do\n", []),
+ 									lists:foreach(fun
+ 																	({module_info, _}) -> ok;
+ 																	({N, A}) ->
+ 																		Args = string:join(
+ 																						 lists:map(fun(E) ->
+ 																												 "arg" ++ integer_to_list(E)
+ 																											 end, lists:seq(1,A)), ", "),
+ 																		io:format(IO, "	def unquote(:~p)(~s) do\n", [atom_to_list(N), Args]),
+ 																		io:format(IO, "		:erlang.apply(:~p, :~p, [~s])\n", [atom_to_list(M), atom_to_list(N), Args]),
+ 																		io:format(IO, "	end\n", [])
+ 																end, MI),
+									io:format(IO, "end\n", []),
+									ok = file:close(IO);
+								_ ->
+									halt(1)
+							end;
+ 						_-> halt(1)
+ 					end
+			end;
+		_ -> help(1)
+	end,
+	halt(0).
 endef
 
 define elixir_binding_target
