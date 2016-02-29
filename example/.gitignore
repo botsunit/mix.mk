@@ -5,4 +5,5 @@ deps/
 ebin/
 example.d
 *.swp
+mix.lock
 

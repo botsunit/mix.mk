@@ -83,13 +83,14 @@ MIX_APPLICATION = [applications: [$(shell $(call erlang,$(call get_app_applicati
 endif
 
 dep_type = $(if $(dep_$(1)),$(word 1,$(dep_$(1))),git)
+dep_hex_version = $(if $(dep_$(1)),$(wordlist 2,$(words $(dep_$(1))),$(dep_$(1))))
 
 define add_dep_git
 {:$(call dep_name,$1), ~r/.*/, $(call dep_type,$1): "$(call dep_repo,$1)", branch: "$(call dep_commit,$1)"$(MIX_COMPILE_EXTRA_$(call dep_name,$1))},
 endef
 
 define add_dep_hex
-{:$(call dep_name,$1), "~> $(call dep_repo,$1)"},
+{:$(call dep_name,$1), "$(call dep_hex_version,$1)"},
 endef
 
 define add_dep_cp
