@@ -92,6 +92,10 @@ define add_dep_hex
 {:$(call dep_name,$1), "$(call dep_hex_version,$1)"},
 endef
 
+define add_dep_hexpm
+{:$(call dep_name,$1), "$(call dep_hex_version,$1)"},
+endef
+
 define add_dep_cp
 {:$(call dep_name,$1), path: "$(call dep_repo,$1)"},
 endef
