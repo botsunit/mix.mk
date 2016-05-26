@@ -84,8 +84,16 @@ endif
 dep_type = $(if $(dep_$(1)),$(word 1,$(dep_$(1))),git)
 dep_hex_version = $(if $(dep_$(1)),$(wordlist 2,$(words $(dep_$(1))),$(dep_$(1))))
 
+define dep_bort.sh
+	case `git ls-remote -q -t -h $(call dep_repo,$1) | cut -f 2 | grep "$(call dep_commit,$1)" | tail -1 | cut -d / -f 2` in
+		tags) echo "tag" ;;
+	  *) echo "branch" ;;
+	esac
+endef
+dep_bort = $(shell $(call dep_bort.sh,$1))
+
 define add_dep_git
-{:$(call dep_name,$1), ~r/.*/, $(call dep_type,$1): "$(call dep_repo,$1)", branch: "$(call dep_commit,$1)"$(MIX_COMPILE_EXTRA_$(call dep_name,$1))},
+{:$(call dep_name,$1), ~r/.*/, $(call dep_type,$1): "$(call dep_repo,$1)", $(call dep_bort,$1): "$(call dep_commit,$1)"$(MIX_COMPILE_EXTRA_$(call dep_name,$1))},
 endef
 
 define add_dep_hex
@@ -102,26 +110,26 @@ endef
 
 define compat_mix_exs
 defmodule ${MIX_PROJECT}.Mixfile do
-	use Mix.Project
+  use Mix.Project
 
-	def project do
-		[app: :${PROJECT},
-		 version: "${MIX_PROJECT_VERSION}",
-		 elixir: "${ELIXIR_VERSION}",
-		 build_embedded: Mix.env == :prod,
-		 start_permanent: Mix.env == :prod,
-		 deps: deps]
-	end
+  def project do
+    [app: :${PROJECT},
+     version: "${MIX_PROJECT_VERSION}",
+     elixir: "${ELIXIR_VERSION}",
+     build_embedded: Mix.env == :prod,
+     start_permanent: Mix.env == :prod,
+     deps: deps]
+  end
 
-	def application do
-		${MIX_APPLICATION}
-	end
+  def application do
+    ${MIX_APPLICATION}
+  end
 
-	defp deps do
-		[$(foreach d,$(DEPS),\
-\n			$(call add_dep_$(call dep_type,$d),$d))
-		]
-	end
+  defp deps do
+    [$(foreach d,$(DEPS),\
+\n      $(call add_dep_$(call dep_type,$d),$d))
+    ]
+  end
 end
 endef
 
