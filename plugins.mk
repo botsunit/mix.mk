@@ -87,10 +87,12 @@ dep_hex_version = $(if $(dep_$(1)),$(wordlist 2,$(words $(dep_$(1))),$(dep_$(1))
 define dep_bort.sh
 	case `git ls-remote -q -t -h $(call dep_repo,$1) | cut -f 2 | grep "$(call dep_commit,$1)" | tail -1 | cut -d / -f 2` in
 		tags) echo "tag" ;;
-	  *) echo "branch" ;;
+ 		*) echo "branch" ;;
 	esac
 endef
-dep_bort = $(shell $(call dep_bort.sh,$1))
+define dep_bort
+$(shell $(call dep_bort.sh,$1))
+endef
 
 define add_dep_git
 {:$(call dep_name,$1), ~r/.*/, $(call dep_type,$1): "$(call dep_repo,$1)", $(call dep_bort,$1): "$(call dep_commit,$1)"$(MIX_COMPILE_EXTRA_$(call dep_name,$1))},
@@ -133,10 +135,9 @@ defmodule ${MIX_PROJECT}.Mixfile do
 end
 endef
 
-$(eval _compat_mix_exs = $$(compat_mix_exs))
-$(eval export _compat_mix_exs)
-
 mix.exs: app
+	$(eval _compat_mix_exs = $$(compat_mix_exs))
+	$(eval export _compat_mix_exs)
 	$(gen_verbose) echo "$${_compat_mix_exs}" > mix.exs
 
 ## Bindings
