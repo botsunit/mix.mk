@@ -136,9 +136,8 @@ end
 endef
 
 mix.exs: app
-	$(eval _compat_mix_exs = $$(compat_mix_exs))
-	$(eval export _compat_mix_exs)
-	$(gen_verbose) echo "$${_compat_mix_exs}" > mix.exs
+	@echo " GEN	mix.exs"
+	$(call render_template,compat_mix_exs,mix.exs)
 
 ## Bindings
 
